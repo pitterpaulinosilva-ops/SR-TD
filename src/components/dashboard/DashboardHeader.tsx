@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Edit2, LayoutDashboard, X } from "lucide-react";
+import { Check, Edit2, LayoutDashboard, X, GitBranch } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,7 +8,17 @@ interface DashboardHeaderProps {
   projectName?: string;
   objective?: string;
   directorate?: string;
-  onUpdate?: (data: { projectName: string; objective: string; directorate: string }) => void;
+  macroprocess?: string;
+  process?: string;
+  subprocess?: string;
+  onUpdate?: (data: {
+    projectName: string;
+    objective: string;
+    directorate: string;
+    macroprocess: string;
+    process: string;
+    subprocess: string;
+  }) => void;
   readOnly?: boolean;
 }
 
@@ -16,11 +26,21 @@ const DashboardHeader = ({
   projectName = "Novo Sistema de Saúde",
   objective = "Implementação da nova plataforma...",
   directorate = "",
+  macroprocess = "",
+  process = "",
+  subprocess = "",
   onUpdate,
   readOnly = false
 }: DashboardHeaderProps) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({ projectName, objective, directorate });
+  const [formData, setFormData] = useState({
+    projectName,
+    objective,
+    directorate,
+    macroprocess,
+    process,
+    subprocess
+  });
 
   const handleSave = () => {
     if (onUpdate) {
@@ -30,15 +50,19 @@ const DashboardHeader = ({
   };
 
   const handleCancel = () => {
-    setFormData({ projectName, objective, directorate });
+    setFormData({ projectName, objective, directorate, macroprocess, process, subprocess });
     setIsEditing(false);
   };
+
+  // Monta a cadeia de processos para exibição
+  const processChain = [macroprocess, process, subprocess].filter(Boolean).join(" → ");
 
   if (isEditing) {
     return (
       <header className="flex flex-col gap-4 p-6 bg-card rounded-xl border border-border shadow-card animate-fade-in w-full">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 space-y-4">
+            {/* Primeira linha: Nome do Projeto e Diretoria */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-xs font-medium text-muted-foreground">Nome do Projeto</label>
@@ -58,6 +82,47 @@ const DashboardHeader = ({
                 />
               </div>
             </div>
+
+            {/* Segunda linha: Cadeia de Processos (Azure DevOps) */}
+            <div className="p-4 bg-muted/50 rounded-lg border border-border/50">
+              <div className="flex items-center gap-2 mb-3">
+                <GitBranch className="h-4 w-4 text-primary" />
+                <span className="text-xs font-semibold text-primary uppercase tracking-wider">
+                  Cadeia de Processos (Azure DevOps)
+                </span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-muted-foreground">Macroprocesso</label>
+                  <Input
+                    value={formData.macroprocess}
+                    onChange={(e) => setFormData({ ...formData, macroprocess: e.target.value })}
+                    placeholder="Ex: Gestão de Saúde"
+                    className="text-sm"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-muted-foreground">Processo</label>
+                  <Input
+                    value={formData.process}
+                    onChange={(e) => setFormData({ ...formData, process: e.target.value })}
+                    placeholder="Ex: Saúde Ocupacional"
+                    className="text-sm"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-muted-foreground">Subprocesso</label>
+                  <Input
+                    value={formData.subprocess}
+                    onChange={(e) => setFormData({ ...formData, subprocess: e.target.value })}
+                    placeholder="Ex: Sistema Integrado"
+                    className="text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Terceira linha: Objetivo */}
             <div className="space-y-2">
               <label className="text-xs font-medium text-muted-foreground">Objetivo</label>
               <Textarea
@@ -96,6 +161,17 @@ const DashboardHeader = ({
               {projectName}
             </h1>
           </div>
+
+          {/* Exibe a cadeia de processos se existir */}
+          {processChain && (
+            <div className="flex items-center gap-2 mt-2">
+              <GitBranch className="h-3.5 w-3.5 text-primary" />
+              <span className="text-xs font-medium text-primary">
+                {processChain}
+              </span>
+            </div>
+          )}
+
           <p className="text-muted-foreground mt-1 max-w-2xl leading-relaxed">
             {objective || "Sem objetivo definido."}
           </p>
@@ -108,7 +184,14 @@ const DashboardHeader = ({
           size="icon"
           className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity"
           onClick={() => {
-            setFormData({ projectName, objective, directorate: directorate || "" });
+            setFormData({
+              projectName,
+              objective,
+              directorate: directorate || "",
+              macroprocess: macroprocess || "",
+              process: process || "",
+              subprocess: subprocess || ""
+            });
             setIsEditing(true);
           }}
         >

@@ -15,6 +15,10 @@ const defaultReportFields = {
         { id: "l1", text: "Necessidade de envolver o time jurídico desde o início do planejamento" }
     ],
     directorate: "",
+    // Campos para integração com Azure DevOps
+    macroprocess: "",
+    process: "",
+    subprocess: "",
 };
 
 export const reportService = {

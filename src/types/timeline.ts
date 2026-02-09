@@ -25,6 +25,10 @@ export interface Report {
     projectName: string;
     objective: string;
     directorate?: string;
+    // Campos para integração com Azure DevOps
+    macroprocess?: string;
+    process?: string;
+    subprocess?: string;
     risks: Item[];
     lessons: Item[];
     date: string;

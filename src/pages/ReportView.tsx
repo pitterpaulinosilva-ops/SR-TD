@@ -53,13 +53,23 @@ const ReportView = () => {
     reportService.update(updatedReport.id, updatedReport);
   };
 
-  const handleUpdateHeader = (data: { projectName: string; objective: string; directorate: string }) => {
+  const handleUpdateHeader = (data: {
+    projectName: string;
+    objective: string;
+    directorate: string;
+    macroprocess: string;
+    process: string;
+    subprocess: string;
+  }) => {
     // Update title to match projectName so it shows up correctly in the Home list
     updateReport({
       ...report,
       ...data,
       title: data.projectName,
-      directorate: data.directorate
+      directorate: data.directorate,
+      macroprocess: data.macroprocess,
+      process: data.process,
+      subprocess: data.subprocess
     });
     toast.success("Cabeçalho atualizado");
   };
@@ -139,6 +149,9 @@ const ReportView = () => {
           projectName={report.projectName}
           objective={report.objective}
           directorate={report.directorate}
+          macroprocess={report.macroprocess}
+          process={report.process}
+          subprocess={report.subprocess}
           onUpdate={handleUpdateHeader}
         />
 
