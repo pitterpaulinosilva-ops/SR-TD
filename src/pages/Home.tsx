@@ -1,20 +1,28 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FileText, Plus, Trash2, Search, Clock, ArrowUpRight, Calendar } from "lucide-react";
+import { FileText, Plus, Trash2, Search, Clock, ArrowUpRight, Calendar, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { reportService } from "@/services/reportService";
+import { programService } from "@/services/programService";
 import { Report } from "@/types/timeline";
+import { Program } from "@/types/program";
 import { toast } from "sonner";
 import Layout from "@/components/layout/Layout";
+import { cn } from "@/lib/utils";
 
+import { ProjectTypeSelector } from "@/components/dashboard/ProjectTypeSelector";
 import { MultiSelectFilter } from "@/components/ui/multi-select-filter";
 
+type DashboardItem = (Report & { type: "project" }) | (Program & { type: "program" });
+
 const Home = () => {
-    const [reports, setReports] = useState<Report[]>([]);
+    const [items, setItems] = useState<DashboardItem[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
     const navigate = useNavigate();
+
+    // Filters
     const [selectedDirectorates, setSelectedDirectorates] = useState<Set<string>>(new Set());
     const [selectedProductOwners, setSelectedProductOwners] = useState<Set<string>>(new Set());
     const [selectedMacroprocesses, setSelectedMacroprocesses] = useState<Set<string>>(new Set());
@@ -22,63 +30,101 @@ const Home = () => {
     const [selectedSubprocesses, setSelectedSubprocesses] = useState<Set<string>>(new Set());
 
     useEffect(() => {
-        const data = reportService.getAll();
-        setReports(data);
+        const loadData = () => {
+            const reports = reportService.getAll().map(r => ({ ...r, phases: r.phases || [], type: "project" as const }));
+            const programs = programService.getAll().map(p => ({ ...p, phases: p.phases || [], type: "program" as const }));
+            // Sort by creation date descending
+            const combined = [...programs, ...reports].sort((a, b) =>
+                new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            );
+            setItems(combined);
+        };
+        loadData();
     }, []);
 
-    const handleCreate = () => {
+    const [isSelectorOpen, setIsSelectorOpen] = useState(false);
+
+    const handleCreateProject = () => {
         const title = `Status Report ${new Date().toLocaleDateString("pt-BR")}`;
         const newReport = reportService.create(title);
-        setReports([...reports, newReport]);
+        // Refresh list
+        loadItems();
+
         toast.success("Novo Status Report criado!");
         navigate(`/report/${newReport.id}`);
     };
 
-    const handleDelete = (id: string, e: React.MouseEvent) => {
+    const handleSelectType = (type: "project" | "program") => {
+        setIsSelectorOpen(false);
+        if (type === "project") {
+            handleCreateProject();
+        } else {
+            const title = `Programa Estratégico ${new Date().toLocaleDateString("pt-BR")}`;
+            const newProgram = programService.create(title);
+            // Refresh list
+            loadItems();
+
+            toast.success("Novo Programa Estratégico criado!");
+            navigate(`/program/${newProgram.id}`);
+        }
+    };
+
+    const loadItems = () => {
+        const reports = reportService.getAll().map(r => ({ ...r, phases: r.phases || [], type: "project" as const }));
+        const programs = programService.getAll().map(p => ({ ...p, phases: p.phases || [], type: "program" as const }));
+        setItems([...programs, ...reports].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+    };
+
+    const handleDelete = (id: string, type: "project" | "program", e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
 
-        if (confirm("Tem certeza que deseja excluir este report?")) {
-            reportService.delete(id);
-            setReports(reports.filter(r => r.id !== id));
-            toast.success("Report excluído.");
+        if (confirm(`Tem certeza que deseja excluir este ${type === 'project' ? 'projeto' : 'programa'}?`)) {
+            if (type === "project") {
+                reportService.delete(id);
+            } else {
+                programService.delete(id);
+            }
+            // Optimistic update
+            setItems(prev => prev.filter(item => item.id !== id));
+            toast.success("Item excluído.");
         }
     };
 
     // Derived State for Stats
-    const totalProjects = reports.length;
-    const totalRisks = reports.reduce((acc, r) => acc + (r.risks?.length || 0), 0);
+    const totalItems = items.length;
 
-    // Calculate overall progress per report
-    const getProgress = (report: Report) => {
-        const allActivities = report.phases.flatMap(p => p.activities);
+    // Calculate overall progress per item
+    const getProgress = (item: DashboardItem) => {
+        const phases = item.phases || [];
+        const allActivities = phases.flatMap(p => p.activities || []);
         if (allActivities.length === 0) return 0;
         const completed = allActivities.filter(a => a.status === "Entregue").length;
         return Math.round((completed / allActivities.length) * 100);
     };
 
-    const getUniqueOptions = (items: Report[], key: keyof Report) => {
-        return Array.from(new Set(items.map(item => item[key]).filter(Boolean))).map(value => ({
-            label: value as string,
-            value: value as string
+    const getUniqueOptions = (items: DashboardItem[], key: keyof Report) => {
+        return Array.from(new Set(items.map(item => item[key] as string).filter(Boolean))).map(value => ({
+            label: value,
+            value: value
         }));
     };
 
-    const directorateOptions = getUniqueOptions(reports, "directorate");
-    const productOwnerOptions = getUniqueOptions(reports, "productOwner");
-    const macroprocessOptions = getUniqueOptions(reports, "macroprocess");
-    const processOptions = getUniqueOptions(reports, "process");
-    const subprocessOptions = getUniqueOptions(reports, "subprocess");
+    const directorateOptions = getUniqueOptions(items, "directorate");
+    const productOwnerOptions = getUniqueOptions(items, "productOwner");
+    const macroprocessOptions = getUniqueOptions(items, "macroprocess");
+    const processOptions = getUniqueOptions(items, "process");
+    const subprocessOptions = getUniqueOptions(items, "subprocess");
 
-    const filteredReports = reports.filter(r => {
-        const matchesSearch = r.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            r.projectName?.toLowerCase().includes(searchTerm.toLowerCase());
+    const filteredItems = items.filter(item => {
+        const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (item.projectName?.toLowerCase() || "").includes(searchTerm.toLowerCase());
 
-        const matchesDirectorate = selectedDirectorates.size === 0 || (r.directorate && selectedDirectorates.has(r.directorate));
-        const matchesProductOwner = selectedProductOwners.size === 0 || (r.productOwner && selectedProductOwners.has(r.productOwner));
-        const matchesMacroprocess = selectedMacroprocesses.size === 0 || (r.macroprocess && selectedMacroprocesses.has(r.macroprocess));
-        const matchesProcess = selectedProcesses.size === 0 || (r.process && selectedProcesses.has(r.process));
-        const matchesSubprocess = selectedSubprocesses.size === 0 || (r.subprocess && selectedSubprocesses.has(r.subprocess));
+        const matchesDirectorate = selectedDirectorates.size === 0 || (item.directorate && selectedDirectorates.has(item.directorate));
+        const matchesProductOwner = selectedProductOwners.size === 0 || (item.productOwner && selectedProductOwners.has(item.productOwner));
+        const matchesMacroprocess = selectedMacroprocesses.size === 0 || (item.macroprocess && selectedMacroprocesses.has(item.macroprocess));
+        const matchesProcess = selectedProcesses.size === 0 || (item.process && selectedProcesses.has(item.process));
+        const matchesSubprocess = selectedSubprocesses.size === 0 || (item.subprocess && selectedSubprocesses.has(item.subprocess));
 
         return matchesSearch && matchesDirectorate && matchesProductOwner && matchesMacroprocess && matchesProcess && matchesSubprocess;
     });
@@ -104,12 +150,10 @@ const Home = () => {
                                     Acompanhe o progresso, riscos e entregas de todas as iniciativas estratégicas SESI/SENAI.
                                 </p>
                             </div>
-                            <Button onClick={handleCreate} size="lg" className="bg-white text-primary hover:bg-white/90 shadow-lg border-0 font-semibold gap-2 transition-transform hover:scale-105 active:scale-95">
-                                <Plus className="h-5 w-5" /> Novo Projeto
+                            <Button onClick={() => setIsSelectorOpen(true)} size="lg" className="bg-white text-primary hover:bg-white/90 shadow-lg border-0 font-semibold gap-2 transition-transform hover:scale-105 active:scale-95">
+                                <Plus className="h-5 w-5" /> Novo Item
                             </Button>
                         </div>
-
-
                     </div>
                 </div>
 
@@ -119,14 +163,14 @@ const Home = () => {
                         <div className="relative w-full sm:w-96 group">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                             <Input
-                                placeholder="Buscar projetos..."
+                                placeholder="Buscar projetos e programas..."
                                 className="pl-10 bg-white border-muted-foreground/20 focus:border-primary/50 transition-all rounded-full"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground w-full sm:w-auto justify-end">
-                            <span className="bg-primary/5 px-3 py-1 rounded-full text-primary font-medium">{filteredReports.length}</span> projetos encontrados
+                            <span className="bg-primary/5 px-3 py-1 rounded-full text-primary font-medium">{filteredItems.length}</span> itens encontrados
                         </div>
                     </div>
 
@@ -143,26 +187,9 @@ const Home = () => {
                             selectedValues={selectedProductOwners}
                             onSelect={setSelectedProductOwners}
                         />
-                        <MultiSelectFilter
-                            title="Macroprocesso"
-                            options={macroprocessOptions}
-                            selectedValues={selectedMacroprocesses}
-                            onSelect={setSelectedMacroprocesses}
-                        />
-                        <MultiSelectFilter
-                            title="Processo"
-                            options={processOptions}
-                            selectedValues={selectedProcesses}
-                            onSelect={setSelectedProcesses}
-                        />
-                        <MultiSelectFilter
-                            title="Subprocesso"
-                            options={subprocessOptions}
-                            selectedValues={selectedSubprocesses}
-                            onSelect={setSelectedSubprocesses}
-                        />
-                        {/* Clear All Filters Button */}
-                        {(selectedDirectorates.size > 0 || selectedProductOwners.size > 0 || selectedMacroprocesses.size > 0 || selectedProcesses.size > 0 || selectedSubprocesses.size > 0) && (
+                        {/* More filters can be added here */}
+
+                        {(selectedDirectorates.size > 0 || selectedProductOwners.size > 0) && (
                             <Button
                                 variant="ghost"
                                 size="sm"
@@ -182,51 +209,77 @@ const Home = () => {
                 </div>
 
                 {/* Projects Grid */}
-                {filteredReports.length === 0 ? (
+                {filteredItems.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20 bg-muted/30 rounded-3xl border border-dashed border-muted-foreground/20">
                         <div className="bg-white p-4 rounded-full mb-4 shadow-sm ring-1 ring-border/50">
                             <FileText className="h-8 w-8 text-muted-foreground/50" />
                         </div>
-                        <h3 className="text-lg font-medium text-foreground">Nenhum projeto encontrado</h3>
-                        <p className="text-muted-foreground mb-6 max-w-sm text-center">Tente buscar com outro termo ou crie um novo projeto.</p>
-                        <Button onClick={handleCreate} variant="outline" className="gap-2 rounded-full">
-                            <Plus className="h-4 w-4" /> Criar Projeto
+                        <h3 className="text-lg font-medium text-foreground">Nenhum item encontrado</h3>
+                        <p className="text-muted-foreground mb-6 max-w-sm text-center">Tente buscar com outro termo ou crie um novo item.</p>
+                        <Button onClick={() => setIsSelectorOpen(true)} variant="outline" className="gap-2 rounded-full">
+                            <Plus className="h-4 w-4" /> Criar Novo
                         </Button>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {filteredReports.map((report, index) => {
-                            const progress = getProgress(report);
-                            const hasRisks = report.risks && report.risks.length > 0;
+                        {filteredItems.map((item) => {
+                            const progress = getProgress(item);
+                            const isProgram = item.type === "program";
 
                             return (
                                 <Link
-                                    key={report.id}
-                                    to={`/report/${report.id}`}
+                                    key={item.id}
+                                    to={`/${isProgram ? 'program' : 'report'}/${item.id}`}
                                     className="block group h-full outline-none"
                                 >
-                                    <Card className="h-full flex flex-col border-border/60 hover:border-primary/30 shadow-card hover:shadow-elevated transition-all duration-300 relative overflow-hidden bg-white/60 hover:bg-white transform hover:-translate-y-1">
+                                    <Card
+                                        className={cn(
+                                            "h-full flex flex-col shadow-card hover:shadow-elevated transition-all duration-300 relative overflow-hidden transform hover:-translate-y-1",
+                                            isProgram
+                                                ? "bg-blue-50/40 border-blue-200/60 hover:border-blue-300 hover:bg-blue-50/80"
+                                                : "bg-white/60 border-border/60 hover:border-primary/30 hover:bg-white"
+                                        )}
+                                    >
                                         {/* Status Line Top */}
-                                        <div className={`absolute top-0 left-0 w-full h-1 ${progress === 100 ? 'bg-success' : 'bg-primary'} opacity-80`} />
+                                        <div className={cn(
+                                            "absolute top-0 left-0 w-full h-1 opacity-80",
+                                            progress === 100 ? 'bg-success' : 'bg-primary'
+                                        )} />
 
                                         <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2 pt-6">
                                             <div className="space-y-1.5 flex-1 pr-4">
-                                                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-md border border-border/50 inline-block">
-                                                    {report.directorate || "Diretoria"}
-                                                </span>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-md border border-border/50 inline-block">
+                                                        {item.directorate || "Diretoria"}
+                                                    </span>
+                                                    {isProgram && (
+                                                        <span className="text-[10px] font-bold uppercase tracking-wider text-blue-700 bg-blue-100 px-2 py-0.5 rounded-md border border-blue-200 inline-flex items-center gap-1">
+                                                            <Layers className="h-3 w-3" /> Programa
+                                                        </span>
+                                                    )}
+                                                </div>
                                                 <CardTitle className="text-lg font-bold leading-tight group-hover:text-primary transition-colors line-clamp-2">
-                                                    {report.title}
+                                                    {item.title}
                                                 </CardTitle>
                                             </div>
-                                            <div className="p-2 bg-slate-50 rounded-full group-hover:bg-primary/5 transition-colors border border-slate-100">
-                                                <ArrowUpRight className="h-4 w-4 text-slate-400 group-hover:text-primary transition-colors" />
+                                            <div className={cn(
+                                                "p-2 rounded-full transition-colors border",
+                                                isProgram
+                                                    ? "bg-blue-100 border-blue-200 group-hover:bg-blue-200"
+                                                    : "bg-slate-50 border-slate-100 group-hover:bg-primary/5"
+                                            )}>
+                                                {isProgram ? (
+                                                    <Layers className="h-4 w-4 text-blue-600" />
+                                                ) : (
+                                                    <ArrowUpRight className="h-4 w-4 text-slate-400 group-hover:text-primary" />
+                                                )}
                                             </div>
                                         </CardHeader>
 
                                         <CardContent className="flex-1 space-y-4">
-                                            {report.objective && (
+                                            {item.objective && (
                                                 <p className="text-sm text-muted-foreground line-clamp-2">
-                                                    {report.objective}
+                                                    {item.objective}
                                                 </p>
                                             )}
 
@@ -246,7 +299,7 @@ const Home = () => {
                                             <div className="grid grid-cols-2 gap-2 pt-2">
                                                 <div className="bg-slate-50 p-2 rounded-lg border border-slate-100 group-hover:border-primary/10 transition-colors">
                                                     <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Fases</p>
-                                                    <p className="text-sm font-bold text-slate-700">{report.phases.length}</p>
+                                                    <p className="text-sm font-bold text-slate-700">{(item.phases || []).length}</p>
                                                 </div>
                                                 <div className={`p-2 rounded-lg border transition-colors ${progress === 100
                                                     ? 'bg-green-50 border-green-100'
@@ -270,18 +323,18 @@ const Home = () => {
                                             </div>
                                         </CardContent>
 
-                                        <CardFooter className="flex justify-between items-center py-4 border-t border-border/40 bg-slate-50/50 group-hover:bg-white transition-colors">
+                                        <CardFooter className="flex justify-between items-center py-4 border-t border-border/40 bg-transparent group-hover:bg-white/50 transition-colors">
                                             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                                                 <Calendar className="h-3.5 w-3.5" />
-                                                <span>{new Date(report.createdAt || Date.now()).toLocaleDateString('pt-BR')}</span>
+                                                <span>{new Date(item.createdAt || Date.now()).toLocaleDateString('pt-BR')}</span>
                                             </div>
 
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
                                                 className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 -mr-2 opacity-0 group-hover:opacity-100 transition-all duration-300"
-                                                onClick={(e) => handleDelete(report.id, e)}
-                                                title="Excluir projeto"
+                                                onClick={(e) => handleDelete(item.id, item.type, e)}
+                                                title={`Excluir ${isProgram ? 'programa' : 'projeto'}`}
                                             >
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>
@@ -293,6 +346,12 @@ const Home = () => {
                     </div>
                 )}
             </div>
+
+            <ProjectTypeSelector
+                open={isSelectorOpen}
+                onOpenChange={setIsSelectorOpen}
+                onSelect={(type) => handleSelectType(type as "project" | "program")}
+            />
         </Layout >
     );
 };

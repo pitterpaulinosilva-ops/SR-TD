@@ -32,6 +32,12 @@ export interface Report {
     // Novos campos de papéis
     processOwner?: string;
     productOwner?: string;
+    // Financeiro
+    budget?: number;
+    spent?: number;
+    // Sprint
+    lastSprint?: string;
+    sprintStatus?: string;
     risks: Item[];
     lessons: Item[];
     date: string;

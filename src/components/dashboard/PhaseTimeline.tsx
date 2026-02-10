@@ -17,17 +17,25 @@ const PhaseCard = ({
   index,
   onUpdateActivity,
   onAddActivity,
-  onDeleteActivity
+  onDeleteActivity,
+  onUpdatePhaseName,
+  onDeletePhase
 }: {
   phase: Phase;
   index: number;
   onUpdateActivity: (phaseId: string, activity: Activity) => void;
   onAddActivity: (phaseId: string) => void;
   onDeleteActivity: (phaseId: string, activityId: string) => void;
+  onUpdatePhaseName: (phaseId: string, newName: string) => void;
+  onDeletePhase: (phaseId: string) => void;
 }) => {
   const [open, setOpen] = useState(index === 0);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Activity | null>(null);
+
+  // Phase Name Editing State
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [nameBuffer, setNameBuffer] = useState(phase.name);
 
   // Calculate progress based on activities
   const completedActivities = phase.activities.filter(a => a.status === "Entregue").length;
@@ -53,33 +61,86 @@ const PhaseCard = ({
     }
   };
 
+  const savePhaseName = () => {
+    if (nameBuffer.trim()) {
+      onUpdatePhaseName(phase.id, nameBuffer);
+      setIsEditingName(false);
+    }
+  };
+
+  // Prevent accordion toggle when interacting with controls
+  const stopPropagation = (e: React.MouseEvent) => e.stopPropagation();
+
   return (
     <div
-      className="bg-card rounded-xl border border-border shadow-card overflow-hidden animate-fade-in"
+      className="bg-card rounded-xl border border-border shadow-card overflow-hidden animate-fade-in group/card"
       style={{ animationDelay: `${0.4 + index * 0.1}s` }}
     >
-      <button
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between p-5 hover:bg-muted/50 transition-colors"
+      <div
+        onClick={() => !isEditingName && setOpen(!open)}
+        className="w-full flex items-center justify-between p-5 hover:bg-muted/30 transition-colors cursor-pointer"
       >
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 text-primary" />
-            <h3 className="font-semibold text-card-foreground text-left">{phase.name}</h3>
+        <div className="flex items-center gap-3 flex-1">
+          <div className="flex items-center gap-2 flex-1">
+            <AlertCircle className="h-4 w-4 text-primary shrink-0" />
+
+            {isEditingName ? (
+              <div className="flex items-center gap-2 flex-1" onClick={stopPropagation}>
+                <Input
+                  value={nameBuffer}
+                  onChange={(e) => setNameBuffer(e.target.value)}
+                  className="h-8 max-w-sm font-semibold"
+                  autoFocus
+                  onKeyDown={(e) => e.key === "Enter" && savePhaseName()}
+                />
+                <Button size="icon" variant="ghost" className="h-8 w-8 text-success hover:bg-success/10" onClick={savePhaseName}>
+                  <Check className="h-4 w-4" />
+                </Button>
+                <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => { setIsEditingName(false); setNameBuffer(phase.name); }}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 group/title">
+                <h3 className="font-semibold text-card-foreground text-left">{phase.name}</h3>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-6 w-6 opacity-0 group-hover/title:opacity-100 transition-opacity text-muted-foreground hover:text-primary"
+                  onClick={(e) => { e.stopPropagation(); setIsEditingName(true); setNameBuffer(phase.name); }}
+                >
+                  <Pencil className="h-3 w-3" />
+                </Button>
+              </div>
+            )}
+
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-medium bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-              {progressPercentage}%
-            </span>
-            <span className="text-xs text-muted-foreground">
-              ({phase.activities.length} atividades)
-            </span>
+
+          <div className="flex items-center gap-2 shrink-0">
+            {!isEditingName && (
+              <>
+                <span className="text-xs font-medium bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                  {progressPercentage}%
+                </span>
+                <span className="text-xs text-muted-foreground hidden sm:inline">
+                  ({phase.activities.length} atividades)
+                </span>
+                <Button
+                  size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-destructive opacity-0 group-hover/card:opacity-100 transition-opacity"
+                  onClick={(e) => { e.stopPropagation(); onDeletePhase(phase.id); }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </>
+            )}
           </div>
         </div>
-        <ChevronDown
-          className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${open ? "rotate-180" : ""}`}
-        />
-      </button>
+        {!isEditingName && (
+          <ChevronDown
+            className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ml-2 ${open ? "rotate-180" : ""}`}
+          />
+        )}
+      </div>
 
       {/* Progress bar */}
       <div className="px-5">
@@ -210,15 +271,30 @@ interface PhaseTimelineProps {
   onAddActivity: (phaseId: string) => void;
   onUpdateActivity: (phaseId: string, activity: Activity) => void;
   onDeleteActivity: (phaseId: string, activityId: string) => void;
+  // Novos handlers
+  onAddPhase: () => void;
+  onUpdatePhaseName: (phaseId: string, newName: string) => void;
+  onDeletePhase: (phaseId: string) => void;
 }
 
-const PhaseTimeline = ({ phases, onAddActivity, onUpdateActivity, onDeleteActivity }: PhaseTimelineProps) => {
+const PhaseTimeline = ({
+  phases,
+  onAddActivity,
+  onUpdateActivity,
+  onDeleteActivity,
+  onAddPhase,
+  onUpdatePhaseName,
+  onDeletePhase
+}: PhaseTimelineProps) => {
   return (
     <section>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-bold text-foreground font-display">
           Progresso por Contexto de Negócio
         </h2>
+        <Button variant="outline" size="sm" onClick={onAddPhase} className="gap-2 bg-white hover:bg-slate-50">
+          <Plus className="h-4 w-4" /> Nova Fase
+        </Button>
       </div>
       <div className="space-y-3">
         {phases.map((phase, i) => (
@@ -229,9 +305,18 @@ const PhaseTimeline = ({ phases, onAddActivity, onUpdateActivity, onDeleteActivi
             onAddActivity={onAddActivity}
             onUpdateActivity={onUpdateActivity}
             onDeleteActivity={onDeleteActivity}
+            onUpdatePhaseName={onUpdatePhaseName}
+            onDeletePhase={onDeletePhase}
           />
         ))}
       </div>
+
+      {phases.length === 0 && (
+        <div className="text-center py-10 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+          <p className="text-slate-500 mb-4">Nenhuma fase cadastrada.</p>
+          <Button onClick={onAddPhase}>Criar Primeira Fase</Button>
+        </div>
+      )}
     </section>
   );
 };

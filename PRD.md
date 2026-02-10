@@ -2,8 +2,8 @@
 
 ## SESI SENAI Health Report
 
-**Versão:** 1.0.0  
-**Data:** 09/02/2026  
+**Versão:** 1.1.0  
+**Data:** 10/02/2026  
 **Autor:** Equipe de Desenvolvimento SESI SENAI  
 **Status:** Em Produção
 
@@ -36,11 +36,13 @@ O **SESI SENAI Health Report** é uma plataforma web para gestão de Status Repo
 
 | Funcionalidade | Descrição | Status |
 |----------------|-----------|--------|
-| **Criar Report** | Permite criar novos status reports com dados pré-populados | ✅ Implementado |
-| **Listar Reports** | Dashboard com cards de todos os reports criados | ✅ Implementado |
+| **Criar Report** | Permite criar novos status reports com campos vazios por padrão | ✅ Implementado |
+| **Listar Reports** | Dashboard minimalista com cards de status visual | ✅ Implementado |
 | **Visualizar Report** | Página detalhada com todas as informações do projeto | ✅ Implementado |
 | **Editar Report** | Edição inline de todos os campos do relatório | ✅ Implementado |
 | **Excluir Report** | Remoção de relatórios com confirmação | ✅ Implementado |
+| **Filtros Avançados**| Múltipla seleção: Diretoria, PO, Macroprocesso, etc. | ✅ Implementado |
+| **Busca Inteligente**| Busca por Nome do Projeto ou Título do Report | ✅ Implementado |
 
 ### 2.2 Dados do Projeto
 
@@ -48,6 +50,8 @@ O **SESI SENAI Health Report** é uma plataforma web para gestão de Status Repo
 - **Nome do Projeto** (editável)
 - **Objetivo** (editável, textarea)
 - **Diretoria** (editável)
+- **Process Owner** (editável)
+- **Product Owner** (editável)
 - **Data de Criação** (automático)
 
 #### 2.2.2 Cadeia de Processos (Integração Azure DevOps)
@@ -162,6 +166,8 @@ interface Report {
     macroprocess?: string;
     process?: string;
     subprocess?: string;
+    processOwner?: string;
+    productOwner?: string;
     risks: Item[];
     lessons: Item[];
     date: string;
@@ -229,11 +235,12 @@ interface Item {
 
 ### 4.3 Páginas
 
-#### 4.3.1 Home (Lista de Reports)
-- Header com título e botão "Novo Report"
+#### 4.3.1 Home (Dashboard de Projetos)
+- Header com título e botão "Novo Projeto"
 - Grid de cards com resumo de cada report
-- Estado vazio com CTA para criar primeiro report
-- Ações: ver detalhes, excluir
+- **Indicador Visual de Status**: "No Prazo" (Azul) ou "Concluído" (Verde)
+- **Filtros Multi-seleção**: Filtragem dinâmica por metadados
+- Atores: ver detalhes, excluir
 
 #### 4.3.2 ReportView (Detalhe do Report)
 - Breadcrumb de navegação
@@ -299,7 +306,7 @@ O arquivo `vercel.json` já está configurado para SPA routing:
 
 ### 6.3 Repositório
 
-- **GitHub:** https://github.com/pitterpaulinosilva-ops/sesi-senai-health-report
+- **GitHub:** https://github.com/pitterpaulinosilva-ops/SR-TD.git
 - **Branch Principal:** main
 
 ---
@@ -330,10 +337,11 @@ npm run test:watch # Testes em modo watch
 
 ## 8. ROADMAP
 
-### Versão 1.1 (Próxima)
-- [ ] Exportação para PDF
-- [ ] Filtros na lista de reports
-- [ ] Busca por nome de projeto
+### Versão 1.1 (Atual)
+- [x] Filtros avançados na lista de reports
+- [x] Busca inteligente por projeto
+- [x] Campos de Process Owner e Product Owner
+- [ ] Exportação para PDF (Próximo)
 
 ### Versão 1.2
 - [ ] Integração com Azure DevOps
@@ -367,7 +375,7 @@ npm run test:watch # Testes em modo watch
 Para dúvidas ou sugestões sobre este projeto:
 
 - **Equipe:** SESI SENAI Alagoas
-- **Repositório:** [GitHub](https://github.com/pitterpaulinosilva-ops/sesi-senai-health-report)
+- **Repositório:** [GitHub SR-TD](https://github.com/pitterpaulinosilva-ops/SR-TD.git)
 
 ---
 

@@ -134,6 +134,33 @@ const ReportView = () => {
     toast.success("Atividade removida");
   };
 
+  const handleAddPhase = () => {
+    const newPhase = {
+      id: Math.random().toString(36).substr(2, 9),
+      name: "Nova Fase",
+      progress: 0,
+      activities: []
+    };
+    updateReport({ ...report, phases: [...report.phases, newPhase] });
+    toast.success("Nova fase adicionada");
+  };
+
+  const handleUpdatePhaseName = (phaseId: string, newName: string) => {
+    const updatedPhases = report.phases.map(p =>
+      p.id === phaseId ? { ...p, name: newName } : p
+    );
+    updateReport({ ...report, phases: updatedPhases });
+    toast.success("Nome da fase atualizado");
+  };
+
+  const handleDeletePhase = (phaseId: string) => {
+    if (confirm("Tem certeza que deseja excluir esta fase e todas as suas atividades?")) {
+      const updatedPhases = report.phases.filter(p => p.id !== phaseId);
+      updateReport({ ...report, phases: updatedPhases });
+      toast.success("Fase removida");
+    }
+  };
+
   return (
     <Layout>
       <div className="space-y-6 animate-fade-in">
@@ -164,6 +191,9 @@ const ReportView = () => {
           onAddActivity={handleAddActivity}
           onUpdateActivity={handleUpdateActivity}
           onDeleteActivity={handleDeleteActivity}
+          onAddPhase={handleAddPhase}
+          onUpdatePhaseName={handleUpdatePhaseName}
+          onDeletePhase={handleDeletePhase}
         />
 
         <StrategicCards
