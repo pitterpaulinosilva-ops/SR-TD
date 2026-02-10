@@ -12,6 +12,7 @@
     --foreground: 222 47% 11%;
     /* Deep dark blue-grey for text */
 
+    /* Premium Card Surface - Slightly off-white for depth */
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
 
@@ -56,14 +57,17 @@
     /* Matches Primary */
     --info-foreground: 210 40% 98%;
 
-    /* Refined Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(215 100% 30%), hsl(210 80% 40%));
-    --gradient-header: linear-gradient(135deg, hsl(215 100% 25%), hsl(215 100% 35%));
-    --gradient-accent: linear-gradient(135deg, hsl(184 80% 33%), hsl(184 70% 40%));
+    /* Refined Gradients - Corporate & Modern */
+    --gradient-primary: linear-gradient(135deg, hsl(215 100% 30%), hsl(215 80% 45%));
+    --gradient-header: linear-gradient(to right, hsl(215 100% 30%), hsl(220 90% 20%));
+    --gradient-accent: linear-gradient(135deg, hsl(184 80% 33%), hsl(184 60% 45%));
+    --gradient-subtle: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.5));
 
-    /* Professional Shadows */
-    --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-    --shadow-elevated: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    /* Professional Shadows - Softer & Deeper */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-card: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+    --shadow-elevated: 0 20px 25px -5px rgb(0 0 0 / 0.05), 0 8px 10px -6px rgb(0 0 0 / 0.01);
+    --shadow-glow: 0 0 20px -5px hsl(215 100% 30% / 0.15);
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -117,7 +121,7 @@
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-border outline-ring/50;
   }
 
   html {
@@ -130,6 +134,11 @@
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Technical Grid Pattern Background */
+    background-image:
+      radial-gradient(circle at 1px 1px, hsl(215 20% 90% / 0.5) 1px, transparent 0);
+    background-size: 24px 24px;
+    background-position: center;
   }
 
   html,
@@ -160,8 +169,16 @@
     box-shadow: var(--shadow-elevated);
   }
 
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
+  }
+
   .glass {
-    @apply bg-white/80 backdrop-blur-md border border-white/20;
+    @apply bg-white/70 backdrop-blur-md border border-white/40 shadow-sm;
+  }
+
+  .glass-card {
+    @apply bg-white/60 backdrop-blur-sm border border-white/50 shadow-card hover:bg-white/80 transition-all duration-300;
   }
 
   .dark .glass {

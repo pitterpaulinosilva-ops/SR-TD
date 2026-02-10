@@ -152,6 +152,8 @@ const ReportView = () => {
           macroprocess={report.macroprocess}
           process={report.process}
           subprocess={report.subprocess}
+          processOwner={report.processOwner}
+          productOwner={report.productOwner}
           onUpdate={handleUpdateHeader}
         />
 

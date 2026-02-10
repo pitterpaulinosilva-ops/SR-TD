@@ -264,8 +264,8 @@ const SidebarTrigger = React.forwardRef<
 SidebarTrigger.displayName = "SidebarTrigger"
 
 const SidebarRail = React.forwardRef<
-  HTMLDivElement,
-  React.ComponentProps<"div">
+  HTMLButtonElement,
+  React.ComponentProps<"button">
 >(({ className, ...props }, ref) => {
   const { toggleSidebar } = useSidebar()
 
@@ -500,6 +500,8 @@ const SidebarMenuButton = React.forwardRef<
   React.ComponentProps<"button"> & {
     asChild?: boolean
     isActive?: boolean
+    variant?: "default" | "outline"
+    size?: "default" | "sm" | "lg"
     tooltip?: string | React.ComponentProps<typeof TooltipContent>
   }
 >(

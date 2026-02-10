@@ -19,6 +19,8 @@ const defaultReportFields = {
     macroprocess: "",
     process: "",
     subprocess: "",
+    processOwner: "",
+    productOwner: "",
 };
 
 export const reportService = {
@@ -65,9 +67,17 @@ export const reportService = {
             createdAt: new Date().toISOString(),
             // New fields with defaults (empty for new reports to enforce user input or use defaults?)
             // Let's use defaults to verify visualization first
-            ...defaultReportFields,
-            risks: [], // Start empty for new reports as requested? Or with example? Let's start empty.
-            lessons: []
+            // Start with empty fields for new reports
+            projectName: "Novo Projeto",
+            objective: "",
+            risks: [],
+            lessons: [],
+            directorate: "",
+            macroprocess: "",
+            process: "",
+            subprocess: "",
+            processOwner: "",
+            productOwner: "",
         };
 
         reports.push(newReport);

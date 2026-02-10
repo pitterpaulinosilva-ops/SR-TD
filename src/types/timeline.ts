@@ -29,6 +29,9 @@ export interface Report {
     macroprocess?: string;
     process?: string;
     subprocess?: string;
+    // Novos campos de papéis
+    processOwner?: string;
+    productOwner?: string;
     risks: Item[];
     lessons: Item[];
     date: string;
