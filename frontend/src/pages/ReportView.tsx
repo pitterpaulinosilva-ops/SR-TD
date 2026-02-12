@@ -60,16 +60,13 @@ const ReportView = () => {
     macroprocess: string;
     process: string;
     subprocess: string;
+    processOwner: string;
+    productOwner: string;
   }) => {
-    // Update title to match projectName so it shows up correctly in the Home list
     updateReport({
       ...report,
       ...data,
       title: data.projectName,
-      directorate: data.directorate,
-      macroprocess: data.macroprocess,
-      process: data.process,
-      subprocess: data.subprocess
     });
     toast.success("Cabeçalho atualizado");
   };
