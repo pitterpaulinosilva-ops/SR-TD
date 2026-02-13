@@ -304,7 +304,6 @@ const Home = () => {
                         />
                     </section>
                 </div>
-
                 {/* ─── Projects Grid ─── */}
                 {filteredItems.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-24 text-center bg-muted/30 rounded-lg border border-dashed border-border">
