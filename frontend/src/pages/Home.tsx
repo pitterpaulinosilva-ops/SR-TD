@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FileText, Plus, Trash2, Search, ArrowUpRight, Calendar, Layers } from "lucide-react";
+import { FileText, Plus, Trash2, Search, ArrowUpRight, Calendar, Layers, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,9 @@ import { toast } from "sonner";
 import Layout from "@/components/layout/Layout";
 import { cn } from "@/lib/utils";
 import KpiCards from "@/components/dashboard/KpiCards";
+import { KPIDashboard } from "@/components/KPIDashboard";
+import { OrquestraDashboard } from "@/components/OrquestraDashboard";
+import { Bug, Lightbulb } from "lucide-react";
 
 import { ProjectTypeSelector } from "@/components/dashboard/ProjectTypeSelector";
 import { MultiSelectFilter } from "@/components/ui/multi-select-filter";
@@ -269,6 +272,38 @@ const Home = () => {
                 {/* ─── KPI Summary ─── */}
                 <KpiCards totalProgress={averageProgress} />
 
+                {/* ─── Painéis de Gestão Tática ─── */}
+                <div className="space-y-12 pt-4">
+                    {/* 1. Visão Geral do Portfólio */}
+                    <section className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
+                        <KPIDashboard
+                            title="Desempenho Geral do Portfólio"
+                            description="Métricas consolidadas de todos os tipos de demandas no Azure DevOps"
+                        />
+                    </section>
+
+                    {/* 2. Gerenciamento de Bugs (SQL Orquestra) */}
+                    <section className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
+                        <OrquestraDashboard
+                            title="Gerenciar Tratamento de Bugs"
+                            description="Monitoramento de bugs de sistemas via Banco SQL Orquestra"
+                            tipo="Ajuste"
+                            colorScheme="red"
+                            icon={<Bug className="h-5 w-5" />}
+                        />
+                    </section>
+
+                    {/* 3. Gerenciamento de Evoluções (SQL Orquestra) */}
+                    <section className="animate-fade-in" style={{ animationDelay: '0.3s' }}>
+                        <OrquestraDashboard
+                            title="Gerenciar Evoluções de Sistemas"
+                            description="Gestão de melhorias e novas funcionalidades no Orquestra"
+                            tipo="Melhoria"
+                            colorScheme="blue"
+                            icon={<Lightbulb className="h-5 w-5" />}
+                        />
+                    </section>
+                </div>
                 {/* ─── Projects Grid ─── */}
                 {filteredItems.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-24 text-center bg-muted/30 rounded-lg border border-dashed border-border">
